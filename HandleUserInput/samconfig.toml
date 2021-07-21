@@ -2,9 +2,9 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "pk-try-1"
+stack_name = "handle-user-input-pk"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1nnheboz2idu"
-s3_prefix = "pk-try-1"
+s3_prefix = "handle-user-input-pk"
 region = "eu-west-2"
 profile = "labs"
 confirm_changeset = true
