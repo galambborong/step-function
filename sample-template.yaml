@@ -1,0 +1,38 @@
+Comment: This is your state machine
+StartAt: HandleUserInput
+States:
+  HandleUserInput:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:handle-user-input-pk-HandleUserInputFunction-QN7GzDLMOVbr:$LATEST
+      Payload:
+        FirstName: Peter
+        Surname: Keenan
+        Message: This is a very brief testing message.
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: ProcessMessageIntoHash
+  ProcessMessageIntoHash:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      Payload.$: $
+      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:process-message-into-hash-ProcessMessageIntoHashFu-91jzqIPo3nlt:$LATEST
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    End: true
