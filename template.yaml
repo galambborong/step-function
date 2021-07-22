@@ -1,5 +1,3 @@
-# Comment: This is your state machine
-
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
@@ -8,31 +6,61 @@ Description: >
   PK trying things out
 
 Resources:
+  StatesExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"      
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - "lambda.InvokeFunction"
+                Resource: "*"
+
   DataTransformationPipeline:
     Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionUri: ./state-machine.yaml
-      # DefineSubstitutions:
-      #   HandleUserInputFunctionArn: !GetAtt HandleUserInput.Arn
-      #   ProcessMessageIntoHashArn: !GetAtt ProcessMessageIntoHash.Arn
+      DefinitionUri: statemachine/state-machine.yaml
+      DefinitionSubstitutions:
+        HandleUserInputFunctionArn: !GetAtt HandleUserInputFunction.Arn
+        ProcessMessageIntoHashFunctionArn: !GetAtt ProcessMessageIntoHashFunction.Arn
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref HandleUserInputFunction
         - LambdaInvokePolicy:
-            FunctionName: !Ref ProcessMessageIntoHash
+            FunctionName: !Ref ProcessMessageIntoHashFunction
 
   HandleUserInputFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./HandleUserInput/src/HandleUserInput/
+      CodeUri: ./functions/HandleUserInput/
       Handler: HandlerUserInput::HandleUserInput.Function::FunctionHandler
       Runtime: dotnetcore3.1
       MemorySize: 256
 
-  ProcessMessageIntoHash:
+  ProcessMessageIntoHashFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./ProcessMessageIntoHash/src/ProcessMessageIntoHash/
+      CodeUri: ./functions/ProcessMessageIntoHash/
       Handler: ProcessMessageIntoHash::ProcessMessageIntoHash.Function::FunctionHandler
       Runtime: dotnetcore3.1
       MemorySize: 256
+
+Outputs:
+  DataTransformationPipelineArn:
+    Description: "Sample data transformation pipeline ARN"
+    Value: !Ref DataTransformationPipeline
+  DataTransformationPipelineRoleArn:
+    Description: "IAM Role created for Data Transformation state machine"
+    Value: !GetAtt DataTransformationPipelineRole.Arn
