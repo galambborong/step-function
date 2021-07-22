@@ -1,77 +1,38 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Transform: AWS::Serverless-2016-10-31
-Description: An attempt to bring together two lambdas into a step function using AWS SAM
-
-Resources:
-  StatesExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service:
-                - !Sub states.${AWS::Region}.amazonaws.com
-            Action: "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        - PolicyName: StatesExecutionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - "lambda:InvokeFunction"
-                Resource: "*"
-
-DataTransformationPipelineStateMachine:
-  Type: AWS::Serverless::StateMachine
-  Properties:
-    Role: !GetAtt StatesExecutionRole.Arn
-    Definition:
-      StartAt: HandleUserInput
-      States:
-        HandleUserInput:
-          Type: Task
-          Resource: !Sub
-            - "${Arn}:live"
-            - Arn: !ImportValue
-              "Fn::Sub": "HandleUserInput-LambdaArn"
-          Retry:
-            - ErrorEquals:
-                - Lambda.ServiceExecution
-                - Lambda.AWSLambdaException
-                - Lambda.SdkClientException
-              IntervalSeconds: 15
-              MaxAttempts: 10
-              BackoffRate: 2
-            - ErrorEquals: 
-                - Lambda.TooManyRequestsException
-              IntervalSeconds: 30
-              MaxAttempts: 10
-              BackoffRate: 2
-            Next: ProcessMessageIntoHash
-            ResultPath: $.HandleUserInputResult
-
-        ProcessMessageIntoHash:
-          Type: Task
-          Resource: !Sub
-            - "${Arn}:live"
-            - Arn: !ImportValue
-          Retry:
-            - ErrorEquals:
-                - Lambda.ServiceExecution
-                - Lambda.AWSLambdaException
-                - Lambda.SdkClientException
-              IntervalSeconds: 15
-              MaxAttempts: 10
-              BackoffRate: 2
-            - ErrorEquals: 
-              - Lambda.TooManyRequestsException
-              IntervalSeconds: 30
-              MaxAttempts: 10
-              BackoffRate: 2
-            Next: ProcessMessageIntoHash
-            InputPath: $.HandleUserInputResult
-            ResultPath: $.ProcessMessageIntoHashResult
+Comment: This is your state machine
+StartAt: HandleUserInput
+States:
+  HandleUserInput:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:handle-user-input-pk-HandleUserInputFunction-QN7GzDLMOVbr:$LATEST
+      Payload:
+        FirstName: Peter
+        Surname: Keenan
+        Message: This is a very brief testing message.
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: ProcessMessageIntoHash
+  ProcessMessageIntoHash:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      Payload.$: $
+      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:process-message-into-hash-ProcessMessageIntoHashFu-91jzqIPo3nlt:$LATEST
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    End: true
