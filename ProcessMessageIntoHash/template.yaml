@@ -25,10 +25,10 @@ Resources:
   # Properties:
   # Path: /hello
   # Method: get
-# Outputs:
-#   ProcessMessageIntoHashFunction:
-#     Description: 'ProcessMessageIntoHash Lambda Function ARN'
-#     Value: !GetAtt ProcessMessageIntoHashFunction.Arn
-#   ProcessMessageIntoHashFunctionIamRole:
-#     Description: 'Implicit IAM Role created for ProcessMessageIntoHash function'
-#     Value: !GetAtt ProcessMessageIntoHashFunctionRole.Arn
+Outputs:
+  ProcessMessageIntoHashFunction:
+    Description: 'ProcessMessageIntoHash Lambda Function ARN'
+    Value: !GetAtt ProcessMessageIntoHashFunction.Arn
+  ProcessMessageIntoHashFunctionIamRole:
+    Description: 'Implicit IAM Role created for ProcessMessageIntoHash function'
+    Value: !GetAtt ProcessMessageIntoHashFunctionRole.Arn

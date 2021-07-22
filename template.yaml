@@ -1,38 +1,38 @@
-Comment: This is your state machine
-StartAt: HandleUserInput
-States:
-  HandleUserInput:
-    Type: Task
-    Resource: arn:aws:states:::lambda:invoke
-    OutputPath: $.Payload
-    Parameters:
-      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:handle-user-input-pk-HandleUserInputFunction-QN7GzDLMOVbr:$LATEST
-      Payload:
-        FirstName: Peter
-        Surname: Keenan
-        Message: This is a very brief testing message.
-    Retry:
-      - ErrorEquals:
-          - Lambda.ServiceException
-          - Lambda.AWSLambdaException
-          - Lambda.SdkClientException
-        IntervalSeconds: 2
-        MaxAttempts: 6
-        BackoffRate: 2
-    Next: ProcessMessageIntoHash
+# Comment: This is your state machine
+
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  DataTransformationPipeline
+
+  PK trying things out
+
+Resources:
+  DataTransformationPipeline:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: ./state-machine.yaml
+      # DefineSubstitutions:
+      #   HandleUserInputFunctionArn: !GetAtt HandleUserInput.Arn
+      #   ProcessMessageIntoHashArn: !GetAtt ProcessMessageIntoHash.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref HandleUserInputFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ProcessMessageIntoHash
+
+  HandleUserInputFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./HandleUserInput/src/HandleUserInput/
+      Handler: HandlerUserInput::HandleUserInput.Function::FunctionHandler
+      Runtime: dotnetcore3.1
+      MemorySize: 256
+
   ProcessMessageIntoHash:
-    Type: Task
-    Resource: arn:aws:states:::lambda:invoke
-    OutputPath: $.Payload
-    Parameters:
-      Payload.$: $
-      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:process-message-into-hash-ProcessMessageIntoHashFu-91jzqIPo3nlt:$LATEST
-    Retry:
-      - ErrorEquals:
-          - Lambda.ServiceException
-          - Lambda.AWSLambdaException
-          - Lambda.SdkClientException
-        IntervalSeconds: 2
-        MaxAttempts: 6
-        BackoffRate: 2
-    End: true
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./ProcessMessageIntoHash/src/ProcessMessageIntoHash/
+      Handler: ProcessMessageIntoHash::ProcessMessageIntoHash.Function::FunctionHandler
+      Runtime: dotnetcore3.1
+      MemorySize: 256
