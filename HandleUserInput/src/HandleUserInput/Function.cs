@@ -11,9 +11,21 @@ namespace HandleUserInput
         public ProducedOutput FunctionHandler(ReceivedInput userInput, ILambdaContext context)
         {
             LambdaLogger.Log($"\n*** {DateTime.Now} ***\nProcessing message object from input\n");
-            var HandledInput = new ProducedOutput { FirstName = userInput.FirstName, Surname = userInput.Surname, Message = userInput.Message, ProcessedAt = DateTime.Now };
-            LambdaLogger.Log($"\n*** {DateTime.Now} ***\nSuccess: Message created!\n");
-            return HandledInput;
+
+
+            if (userInput.FirstName != null || userInput.Surname != null || userInput.Message != null)
+            {
+                var HandledInput = new ProducedOutput { FirstName = userInput.FirstName, Surname = userInput.Surname, Message = userInput.Message, ProcessedAt = DateTime.Now };
+                LambdaLogger.Log($"\n*** {DateTime.Now} ***\nSuccess: Message created!\n");
+                return HandledInput;
+            }
+
+            else
+            {
+                LambdaLogger.Log($"\n*** {DateTime.Now} ***\nError: Incorrect input!\n");
+                throw new ArgumentNullException();
+            }
+
         }
     }
 }
