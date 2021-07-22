@@ -17,7 +17,6 @@ Resources:
               Service: 
                 - !Sub states.${AWS::Region}.amazonaws.com
             Action: "sts:AssumeRole"
-      Path: "/"      
       Policies:
         - PolicyName: StatesExecutionPolicy
           PolicyDocument:
@@ -28,10 +27,49 @@ Resources:
                   - "lambda.InvokeFunction"
                 Resource: "*"
 
+StartAt: HandleUserInput
+States:
+  HandleUserInput:
+    Type: Task
+    Resource: ${HandleUserInputFunctionArn}
+    OutputPath: $.Payload
+    Parameters:
+      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:PKHandleUserInput
+      Payload:
+        FirstName: Peter
+        Surname: Keenan
+        Message: This is a very brief testing message.
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: ProcessMessageIntoHash
+  ProcessMessageIntoHash:
+    Type: Task
+    Resource: ${ProcessMessageIntoHashFunctionArn}
+    OutputPath: $.Payload
+    Parameters:
+      Payload.$: $
+      FunctionName: arn:aws:lambda:eu-west-2:381665830549:function:PKProcessMessageIntoHash
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    End: true
+
+
   DataTransformationPipeline:
     Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionUri: statemachine/state-machine.yaml
+      # DefinitionUri: ./state-machine.yaml
       DefinitionSubstitutions:
         HandleUserInputFunctionArn: !GetAtt HandleUserInputFunction.Arn
         ProcessMessageIntoHashFunctionArn: !GetAtt ProcessMessageIntoHashFunction.Arn
@@ -44,7 +82,7 @@ Resources:
   HandleUserInputFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/HandleUserInput/
+      # CodeUri: ./HandleUserInput/src/HandleUserInput/
       Handler: HandlerUserInput::HandleUserInput.Function::FunctionHandler
       Runtime: dotnetcore3.1
       MemorySize: 256
@@ -52,7 +90,7 @@ Resources:
   ProcessMessageIntoHashFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./functions/ProcessMessageIntoHash/
+      # CodeUri: ./ProcessMessageIntoHash/src/ProcessMessageIntoHash/
       Handler: ProcessMessageIntoHash::ProcessMessageIntoHash.Function::FunctionHandler
       Runtime: dotnetcore3.1
       MemorySize: 256
