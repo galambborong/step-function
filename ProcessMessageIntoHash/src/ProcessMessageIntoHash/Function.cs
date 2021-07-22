@@ -11,17 +11,19 @@ namespace ProcessMessageIntoHash
     { 
         public string FunctionHandler(ProcessedInput processedInput, ILambdaContext context)
         {
-            LambdaLogger.Log($"\n*** {DateTime.Now} *** \n Creating hash from input\n");
-            try
+            LambdaLogger.Log($"\n*** {DateTime.Now} *** \nCreating hash from input\n");
+            
+            if (processedInput.ProcessedAt != null || processedInput.FirstName != null || processedInput.Surname != null || processedInput.Message != null)
             {
                 var hashedObject = processedInput.CreateHash();
                 var finalHash = PrintByteArray(hashedObject.Hash);
-                LambdaLogger.Log($"\n*** {DateTime.Now} *** \n Success: Hash created! Your SHA256 is: {finalHash}\r");
+                LambdaLogger.Log($"\n*** {DateTime.Now} *** \nSuccess: Hash created! Your SHA256 is: {finalHash}\r\n");
                 return finalHash;
-            } catch (Exception e)
+            } 
+            else 
             {
-                LambdaLogger.Log($"\n*** {DateTime.Now} *** \n Error {e} occurred.\nYou possibly did not pass in the expected parameters.\n");
-                return "PROCESS FAILED";
+                LambdaLogger.Log($"\n*** {DateTime.Now} *** \nError: Incorrect input.\n");
+                throw new ArgumentException();
             }
 
         }
